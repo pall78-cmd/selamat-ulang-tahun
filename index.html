@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enola Holmes Archive - Secret Message</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Special+Elite&family=Inter:wght@400;900&display=swap');
+
+        :root {
+            --paper: #e8e2d2;
+            --paper-light: #f5f2e8;
+            --folder-brown: #5d4037;
+            --ink: #2b2b2b;
+            --wax: #9e1b1b;
+        }
+
+        body {
+            background-color: #1a1a1a;
+            background-image: url('https://www.transparenttextures.com/patterns/dark-leather.png');
+            font-family: 'Playfair Display', serif;
+            color: var(--ink);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* --- LAYER 1: ENVELOPE ANIMATION --- */
+        #envelope-container {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            transition: all 1s cubic-bezier(0.87, 0, 0.13, 1);
+        }
+
+        .envelope-part {
+            flex: 1;
+            background: var(--paper);
+            background-image: url('https://www.transparenttextures.com/patterns/paper-fibers.png');
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 1.2s cubic-bezier(0.87, 0, 0.13, 1);
+            position: relative;
+            z-index: 10;
+        }
+
+        .env-top { border-bottom: 1px solid rgba(0,0,0,0.1); }
+        .env-bottom { border-top: 1px solid rgba(0,0,0,0.1); }
+
+        .kop-surat-content {
+            position: absolute;
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .env-top .kop-surat-content { bottom: 0; }
+        .env-bottom .kop-surat-content { top: 0; }
+
+        .wax-seal-btn {
+            width: 90px;
+            height: 90px;
+            background: var(--wax);
+            border-radius: 50%;
+            position: absolute;
+            left: 50%;
+            top: 100%;
+            transform: translate(-50%, -50%);
+            z-index: 20;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2.5rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5), inset 0 0 15px rgba(0,0,0,0.5);
+            border: 3px solid #7c1515;
+            font-family: 'UnifrakturMaguntia', cursive;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .wax-seal-btn:hover { transform: translate(-50%, -50%) scale(1.1) rotate(15deg); }
+
+        /* --- STATE: OPENED ENVELOPE --- */
+        .unlocked .env-top { transform: translateY(-100%); }
+        .unlocked .env-bottom { transform: translateY(100%); }
+        .unlocked .wax-seal-btn { opacity: 0; transform: translate(-50%, -50%) scale(0); pointer-events: none; }
+        .unlocked #envelope-container { pointer-events: none; }
+
+        /* --- LAYER 2: SCRAPBOOK CONTENT --- */
+        #main-content {
+            opacity: 0;
+            transform: scale(0.95);
+            transition: all 1.2s ease-out 0.3s;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .unlocked #main-content { opacity: 1; transform: scale(1); }
+
+        .scrapbook-container {
+            background-color: var(--paper);
+            background-image: url('https://www.transparenttextures.com/patterns/paper-fibers.png');
+            box-shadow: 0 50px 100px rgba(0,0,0,0.5);
+            height: 92vh;
+            max-height: 850px;
+            width: 95%;
+            max-width: 900px;
+            position: relative;
+            border-left: 15px solid var(--folder-brown);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .scroll-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2.5rem;
+        }
+
+        .slide { display: none; }
+        .slide.active { display: block; animation: paperReveal 0.8s ease-out; }
+
+        @keyframes paperReveal {
+            from { opacity: 0; transform: translateY(30px) rotate(1deg); }
+            to { opacity: 1; transform: translateY(0) rotate(0); }
+        }
+
+        /* --- STYLES FOR ELEMENTS --- */
+        .typewriter { font-family: 'Special Elite', cursive; }
+        .clipping {
+            background: var(--paper-light);
+            padding: 1.5rem;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.05);
+            transform: rotate(-1deg);
+        }
+
+        .ink-stamp {
+            border: 4px solid var(--wax);
+            color: var(--wax);
+            font-family: 'Special Elite', cursive;
+            padding: 0.5rem 1rem;
+            text-transform: uppercase;
+            transform: rotate(-12deg);
+            mix-blend-mode: multiply;
+            display: inline-block;
+            font-weight: 900;
+        }
+
+        /* --- LETTER UNFOLD ANIMATION --- */
+        #opened-msg {
+            transform-origin: top;
+            animation: unfold 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+        }
+
+        @keyframes unfold {
+            from { transform: scaleY(0); opacity: 0; }
+            to { transform: scaleY(1); opacity: 1; }
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+        }
+
+        .cal-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+
+        .cal-special {
+            background: var(--wax);
+            color: white;
+            border-radius: 2px;
+            transform: scale(1.1);
+        }
+
+        footer {
+            background: #dcd4c1;
+            border-top: 2px solid #c4bca8;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 50;
+        }
+
+        .btn-nav { font-family: 'Special Elite', cursive; font-size: 0.75rem; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+
+    <!-- LAYER 1: CINEMATIC ENVELOPE -->
+    <div id="envelope-container">
+        <div class="envelope-part env-top">
+            <div class="kop-surat-content">
+                <h4 class="typewriter text-[10px] uppercase tracking-[0.5em] mb-2 opacity-60">The London Secret Registry</h4>
+                <h2 class="font-bold text-3xl uppercase tracking-widest italic border-b-2 border-black pb-2 inline-block">Archive File #3003</h2>
+            </div>
+            <div class="wax-seal-btn" onclick="unlockArchive()">M</div>
+        </div>
+        <div class="envelope-part env-bottom">
+            <div class="kop-surat-content">
+                <p class="typewriter text-[11px] mb-4 font-bold tracking-widest uppercase">Private & Confidential</p>
+                <p class="italic text-gray-600 text-sm italic">"Hanya boleh dibuka oleh subjek yang bersangkutan."</p>
+                <p class="typewriter text-[9px] mt-8 opacity-40 uppercase tracking-widest">Property of the Holmes Family • 2026</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- LAYER 2: SCRAPBOOK CONTENT -->
+    <div id="main-content">
+        <div class="scrapbook-container">
+            
+            <header class="p-6 pb-2 shrink-0 border-b-4 border-double border-black/20">
+                <div class="flex justify-between items-center text-[9px] uppercase font-black tracking-widest opacity-40">
+                    <span>Evidence No. 300326</span>
+                    <span>Top Secret</span>
+                </div>
+                <h1 style="font-family: 'UnifrakturMaguntia', cursive;" class="text-4xl text-center py-2">The Secret Gazette</h1>
+            </header>
+
+            <div class="scroll-wrapper">
+                
+                <!-- SLIDE 1: HEADLINE -->
+                <div id="slide-0" class="slide active">
+                    <div class="max-w-2xl mx-auto space-y-10">
+                        <div class="clipping space-y-6">
+                            <h2 class="typewriter text-4xl font-black text-center border-b-2 border-black pb-4 leading-none">
+                                HEADLINE: <br>HARI PALING BERHARGA!
+                            </h2>
+                            <div class="grid md:grid-cols-2 gap-8 text-lg italic leading-relaxed text-justify">
+                                <p class="first-letter:text-6xl first-letter:font-black first-letter:mr-3 first-letter:float-left first-letter:leading-none">
+                                    Dunia secara resmi bertambah indah hari ini. Tidak ada berita besar di London Gazette, tapi di arsip pribadiku, ini adalah headline utama.
+                                </p>
+                                <p>
+                                    Jika hidup ini adalah misteri yang harus dipecahkan, maka kamu adalah jawaban paling sempurna. Berita tentang keberadaanmu adalah kabar yang selalu ingin kubaca ulang.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex justify-center">
+                            <div class="ink-stamp text-2xl">PRIORITAS UTAMA</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 2: SCRAPBOOK NOTES -->
+                <div id="slide-1" class="slide">
+                    <div class="max-w-xl mx-auto space-y-12">
+                        <div class="bg-[#e1d9c6] p-8 border-2 border-black transform rotate-1 shadow-lg relative">
+                            <div class="absolute -top-3 -left-3 bg-red-800 text-white px-3 py-1 text-[10px] typewriter">CASE NOTE</div>
+                            <h3 class="font-black text-2xl uppercase tracking-tighter border-b border-black mb-4">Catatan Rahasia No. 24</h3>
+                            <p class="typewriter text-lg leading-relaxed">
+                                "Aku mungkin tidak selalu tahu cara merayakan dengan sempurna, tapi setiap halaman hidupku selalu menyisakan ruang untuk namamu."
+                            </p>
+                        </div>
+
+                        <div class="flex flex-wrap justify-around items-center gap-6">
+                            <div class="w-32 h-32 border-2 border-dashed border-black/30 flex items-center justify-center relative bg-white/20">
+                                <span class="text-[8px] typewriter opacity-40 text-center px-2">Tempel Kenangan Di Sini</span>
+                            </div>
+                            <div class="space-y-4">
+                                <div class="ink-stamp text-xs">Bukti No. 1: Senyumanmu</div>
+                                <div class="ink-stamp text-xs" style="transform:rotate(5deg); color:#2b2b2b; border-color:#2b2b2b;">Terverifikasi Abadi</div>
+                            </div>
+                        </div>
+                        <p class="text-center italic text-gray-700 font-bold px-4 leading-relaxed">
+                            "Seperti scrapbook yang penuh potongan kenangan, kita tersusun dari hal-hal kecil yang luar biasa."
+                        </p>
+                    </div>
+                </div>
+
+                <!-- SLIDE 3: CALENDAR -->
+                <div id="slide-2" class="slide">
+                    <div class="max-w-sm mx-auto py-6">
+                        <div class="bg-white/50 p-10 border-2 border-black/10 shadow-inner relative text-center">
+                            <h4 class="font-black text-3xl mb-6 italic">Maret 2026</h4>
+                            <div class="calendar-grid text-[10px] font-black opacity-30 mb-3">
+                                <span>MIN</span><span>SEN</span><span>SEL</span><span>RAB</span><span>KAM</span><span>JUM</span><span>SAB</span>
+                            </div>
+                            <div class="calendar-grid" id="cal-box"></div>
+                            <div class="mt-8">
+                                <div class="ink-stamp text-sm rotate-0">HARI KELAHIRAN!</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SLIDE 4: SECRET MESSAGE -->
+                <div id="slide-3" class="slide">
+                    <div class="max-w-xl mx-auto py-6">
+                        <div id="envelope-final" class="bg-[#f0ece0] border-2 border-black p-10 shadow-2xl relative overflow-hidden">
+                            <div class="absolute top-0 left-0 w-full h-2 bg-red-800"></div>
+                            
+                            <div id="closed-msg" class="text-center space-y-8 py-10">
+                                <div class="flex justify-center">
+                                    <div class="wax-seal-btn" style="position:relative; transform:scale(1.3); cursor:default; left:auto; top:auto;">M</div>
+                                </div>
+                                <h5 class="typewriter font-bold text-xl uppercase">Secret Letter</h5>
+                                <button onclick="revealSecret()" class="bg-black text-white px-10 py-4 typewriter text-[10px] hover:bg-red-900 shadow-xl transition-all">
+                                    BUKA SURAT TERAKHIR
+                                </button>
+                            </div>
+
+                            <div id="opened-msg" class="hidden space-y-8 text-center bg-[#fffdfa] p-8 border border-black/5">
+                                <h5 style="font-family: 'UnifrakturMaguntia', cursive;" class="text-4xl border-b border-black pb-4">Dear You,</h5>
+                                <p class="text-2xl font-black italic leading-tight">
+                                    "Semoga tahun ini lebih lembut padamu. Semoga dunia tidak terlalu kejam. Dan jika nanti lelah, semoga aku masih jadi tempat pulang yang paling masuk akal."
+                                </p>
+                                <div class="pt-8 border-t border-black/10">
+                                    <p class="text-3xl font-black italic">Happy Birthday, My Honey.</p>
+                                </div>
+                                <button onclick="revealSecret()" class="text-[9px] typewriter opacity-30 underline">Lipat Kembali</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <footer>
+                <button id="prevBtn" onclick="move(-1)" class="btn-nav disabled:opacity-20">« Prev</button>
+                <div id="dots" class="flex gap-4"></div>
+                <button id="nextBtn" onclick="move(1)" class="btn-nav">Next »</button>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        let cur = 0;
+        const total = 4;
+
+        function unlockArchive() {
+            document.body.classList.add('unlocked');
+        }
+
+        function move(d) {
+            cur += d;
+            render();
+        }
+
+        function render() {
+            for(let i=0; i<total; i++) {
+                document.getElementById(`slide-${i}`).classList.toggle('active', i === cur);
+            }
+            document.getElementById('prevBtn').disabled = cur === 0;
+            document.getElementById('nextBtn').style.visibility = cur === total - 1 ? 'hidden' : 'visible';
+
+            const d = document.getElementById('dots');
+            d.innerHTML = '';
+            for(let i=0; i<total; i++) {
+                const dot = document.createElement('div');
+                dot.className = `w-1.5 h-1.5 rotate-45 transition-all ${i === cur ? 'bg-black scale-150' : 'bg-black/10'}`;
+                d.appendChild(dot);
+            }
+            document.querySelector('.scroll-wrapper').scrollTop = 0;
+        }
+
+        function revealSecret() {
+            const closed = document.getElementById('closed-msg');
+            const opened = document.getElementById('opened-msg');
+            closed.classList.toggle('hidden');
+            opened.classList.toggle('hidden');
+        }
+
+        function genCal() {
+            const b = document.getElementById('cal-box');
+            for(let i=1; i<=31; i++) {
+                const d = document.createElement('div');
+                d.className = `cal-day ${i === 30 ? 'cal-special' : 'opacity-20'}`;
+                d.innerText = i;
+                b.appendChild(d);
+            }
+        }
+
+        window.onload = () => {
+            genCal();
+            render();
+        }
+    </script>
+</body>
+</html>
+
+  
